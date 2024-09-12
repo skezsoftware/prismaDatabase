@@ -10,7 +10,15 @@ app.use(require("morgan")("dev"));
 // Get Requests
 app.get("/api/stadiums", async (req, res, next) => {
   try {
-    const stadiums = await prisma.stadium.findMany();
+    const stadiums = await prisma.stadium.findMany({
+      include: {
+        visitedStadiums: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
     res.json(stadiums);
   } catch (err) {
     next(err);
@@ -43,6 +51,11 @@ app.get("/api/users/:id", async (req, res, next) => {
   try {
     const users = await prisma.user.findFirst({
       where: { id },
+      include: {
+        _count: {
+          select: { visitedStadiums: true },
+        }
+      },
     });
     res.json(users);
   } catch (err) {
@@ -65,6 +78,7 @@ app.get("/api/users/:id/visitedstadiums", async (req, res, next) => {
 app.get("/api/reviews", async (req, res, next) => {
   try {
     const reviews = await prisma.review.findMany();
+    // Check how to get latest 20 reviews
     res.json(reviews);
   } catch (err) {
     next(err);
@@ -160,30 +174,24 @@ app.post("/api/stadiums", async (req, res, next) => {
 app.post("/api/users", async (req, res, next) => {
   try {
     const {
-      user,
+      firstName,
+      lastName,
+      email,
+      username,
       password,
-      capacity,
-      openYear,
-      division,
-      zipCode,
-      state,
-      imageOutsideURL,
-      imageInsideURL,
+      administrator = false,
     } = req.body;
-    const newStadium = await prisma.stadium.create({
+    const newUser = await prisma.user.create({
       data: {
-        name,
-        teamName,
-        capacity,
-        openYear,
-        division,
-        zipCode,
-        state,
-        imageOutsideURL,
-        imageInsideURL,
+        firstName,
+        lastName,
+        email,
+        username,
+        password,
+        administrator,
       },
     });
-    res.status(201).json(newStadium);
+    res.status(201).json(newUser);
   } catch (err) {
     next(err);
   }
@@ -204,12 +212,11 @@ app.post("/api/users/:id/visitedstadiums", async (req, res, next) => {
     }
 
     // Associate the user with the stadium
-    await prisma.visitedStadium.update({
-      where: { id: userId },
+    await prisma.visitedStadium.create({
+      // where: { id: userId },
       data: {
-        stadium: {
-          connect: { id: stadiumId },
-        },
+        userId,
+        stadiumId,
       },
     });
 
@@ -219,49 +226,49 @@ app.post("/api/users/:id/visitedstadiums", async (req, res, next) => {
   }
 });
 
-app.post("/api/customers/:id/reservations", async (req, res, next) => {
-  try {
-    const customerId = +req.params.id;
-    const { restaurantId, date, partyCount } = req.body;
-    const reservation = await prisma.reservation.create({
-      data: {
-        customerId,
-        restaurantId,
-        date,
-        partyCount,
-      },
-    });
-    res.status(201).json(reservation);
-  } catch (err) {
-    next(err);
-  }
-});
+// app.post("/api/customers/:id/reservations", async (req, res, next) => {
+//   try {
+//     const customerId = +req.params.id;
+//     const { restaurantId, date, partyCount } = req.body;
+//     const reservation = await prisma.reservation.create({
+//       data: {
+//         customerId,
+//         restaurantId,
+//         date,
+//         partyCount,
+//       },
+//     });
+//     res.status(201).json(reservation);
+//   } catch (err) {
+//     next(err);
+//   }
+// });
 
-app.delete(
-  "/api/customers/:customerId/reservations/:id",
-  async (req, res, next) => {
-    try {
-      const id = +req.params.id;
-      const customerId = +req.params.customerId;
+// app.delete(
+//   "/api/customers/:customerId/reservations/:id",
+//   async (req, res, next) => {
+//     try {
+//       const id = +req.params.id;
+//       const customerId = +req.params.customerId;
 
-      const reservationExists = await prisma.reservation.findFirst({
-        where: { id, customerId },
-      });
+//       const reservationExists = await prisma.reservation.findFirst({
+//         where: { id, customerId },
+//       });
 
-      if (!reservationExists) {
-        res.status(404).json({
-          status: 404,
-          message: `Could not find reservation with id ${id}.`,
-        });
-      } else {
-        await prisma.reservation.delete({ where: { id } });
-        res.sendStatus(204);
-      }
-    } catch (err) {
-      next(err);
-    }
-  }
-);
+//       if (!reservationExists) {
+//         res.status(404).json({
+//           status: 404,
+//           message: `Could not find reservation with id ${id}.`,
+//         });
+//       } else {
+//         await prisma.reservation.delete({ where: { id } });
+//         res.sendStatus(204);
+//       }
+//     } catch (err) {
+//       next(err);
+//     }
+//   }
+// );
 
 // Simple error handling middleware
 app.use((err, req, res, next) => {
