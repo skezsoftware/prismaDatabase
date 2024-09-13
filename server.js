@@ -30,6 +30,13 @@ app.get("/api/stadiums/:id", async (req, res, next) => {
   try {
     const stadiums = await prisma.stadium.findFirst({
       where: { id },
+      include: {
+        reviews: {
+          include: {
+            user: true,
+          },
+        },
+      }
     });
     res.json(stadiums);
   } catch (err) {
@@ -39,7 +46,7 @@ app.get("/api/stadiums/:id", async (req, res, next) => {
 
 app.get("/api/users", async (req, res, next) => {
   try {
-    const users = await prisma.user.findMany();
+    const users = await prisma.user.findMany({});
     res.json(users);
   } catch (err) {
     next(err);
@@ -51,10 +58,17 @@ app.get("/api/users/:id", async (req, res, next) => {
   try {
     const users = await prisma.user.findFirst({
       where: { id },
+      // include: {
+      //   _count: {
+      //     select: { visitedStadiums: true },
+      //   },
+      // },
       include: {
-        _count: {
-          select: { visitedStadiums: true },
-        }
+        visitedStadiums: {
+          include: {
+            stadium: true,
+          },
+        },
       },
     });
     res.json(users);
@@ -63,17 +77,17 @@ app.get("/api/users/:id", async (req, res, next) => {
   }
 });
 
-app.get("/api/users/:id/visitedstadiums", async (req, res, next) => {
-  const id = +req.params.id;
-  try {
-    const users = await prisma.visitedStadium.findMany({
-      where: { userId: id },
-    });
-    res.json(users);
-  } catch (err) {
-    next(err);
-  }
-});
+// app.get("/api/users/:id/visitedstadiums", async (req, res, next) => {
+//   const id = +req.params.id;
+//   try {
+//     const users = await prisma.visitedStadium.findMany({
+//       where: { userId: id },
+//     });
+//     res.json(users);
+//   } catch (err) {
+//     next(err);
+//   }
+// });
 
 app.get("/api/reviews", async (req, res, next) => {
   try {
@@ -85,11 +99,18 @@ app.get("/api/reviews", async (req, res, next) => {
   }
 });
 
-app.get("/api/reviews/:id", async (req, res, next) => {
+app.get("/api/reviews/:id/comments", async (req, res, next) => {
   const id = +req.params.id;
   try {
     const reviews = await prisma.review.findFirst({
       where: { id },
+      include: {
+        comments: {
+          include: {
+            user: true,
+          },
+        },
+      },
     });
     res.json(reviews);
   } catch (err) {
@@ -106,38 +127,38 @@ app.get("/api/comments", async (req, res, next) => {
   }
 });
 
-app.get("/api/comments/:id", async (req, res, next) => {
-  const id = +req.params.id;
-  try {
-    const comments = await prisma.comment.findFirst({
-      where: { id },
-    });
-    res.json(comments);
-  } catch (err) {
-    next(err);
-  }
-});
+// app.get("/api/comments/:id", async (req, res, next) => {
+//   const id = +req.params.id;
+//   try {
+//     const comments = await prisma.comment.findFirst({
+//       where: { id },
+//     });
+//     res.json(comments);
+//   } catch (err) {
+//     next(err);
+//   }
+// });
 
-app.get("/api/visitedstadiums", async (req, res, next) => {
-  try {
-    const visitedStadiums = await prisma.visitedStadium.findMany();
-    res.json(visitedStadiums);
-  } catch (err) {
-    next(err);
-  }
-});
+// app.get("/api/visitedstadiums", async (req, res, next) => {
+//   try {
+//     const visitedStadiums = await prisma.visitedStadium.findMany();
+//     res.json(visitedStadiums);
+//   } catch (err) {
+//     next(err);
+//   }
+// });
 
-app.get("/api/visitedstadiums/:id", async (req, res, next) => {
-  const id = +req.params.id;
-  try {
-    const visitedStadiums = await prisma.visitedStadium.findFirst({
-      where: { id },
-    });
-    res.json(visitedStadiums);
-  } catch (err) {
-    next(err);
-  }
-});
+// app.get("/api/visitedstadiums/:id", async (req, res, next) => {
+//   const id = +req.params.id;
+//   try {
+//     const visitedStadiums = await prisma.visitedStadium.findFirst({
+//       where: { id },
+//     });
+//     res.json(visitedStadiums);
+//   } catch (err) {
+//     next(err);
+//   }
+// });
 
 app.post("/api/stadiums", async (req, res, next) => {
   try {
@@ -206,11 +227,9 @@ app.post("/api/users/:id/visitedstadiums", async (req, res, next) => {
     const stadium = await prisma.stadium.findUnique({
       where: { id: stadiumId },
     });
-
     if (!user || !stadium) {
       return res.status(404).json({ error: "User or Stadium not found" });
     }
-
     // Associate the user with the stadium
     await prisma.visitedStadium.create({
       // where: { id: userId },
@@ -225,50 +244,6 @@ app.post("/api/users/:id/visitedstadiums", async (req, res, next) => {
     next(err);
   }
 });
-
-// app.post("/api/customers/:id/reservations", async (req, res, next) => {
-//   try {
-//     const customerId = +req.params.id;
-//     const { restaurantId, date, partyCount } = req.body;
-//     const reservation = await prisma.reservation.create({
-//       data: {
-//         customerId,
-//         restaurantId,
-//         date,
-//         partyCount,
-//       },
-//     });
-//     res.status(201).json(reservation);
-//   } catch (err) {
-//     next(err);
-//   }
-// });
-
-// app.delete(
-//   "/api/customers/:customerId/reservations/:id",
-//   async (req, res, next) => {
-//     try {
-//       const id = +req.params.id;
-//       const customerId = +req.params.customerId;
-
-//       const reservationExists = await prisma.reservation.findFirst({
-//         where: { id, customerId },
-//       });
-
-//       if (!reservationExists) {
-//         res.status(404).json({
-//           status: 404,
-//           message: `Could not find reservation with id ${id}.`,
-//         });
-//       } else {
-//         await prisma.reservation.delete({ where: { id } });
-//         res.sendStatus(204);
-//       }
-//     } catch (err) {
-//       next(err);
-//     }
-//   }
-// );
 
 // Simple error handling middleware
 app.use((err, req, res, next) => {

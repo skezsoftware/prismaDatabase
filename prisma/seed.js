@@ -62,6 +62,8 @@ const createUsers = async () => {
       { username: "aliceuser", password: "password1", firstName: "Alice", lastName: "Smith", email: "alice@email.com" },
       { username: "bobuser", password: "password2", firstName: "Bob", lastName: "Smith", email: "bob@email.com"}, 
       { username: "charlieuser", password: "password3", firstName: "Charlie", lastName: "Smith", email: "charlie@email.com"},
+      { username: "daveuser", password: "password4", firstName: "Dave", lastName: "Smith", email: "dave@email.com"},
+      { username: "eveuser", password: "password5", firstName: "Eve", lastName: "Smith", email: "eve@email.com"}
     ];
     await prisma.user.createMany({ data: users });
   } catch (error) {
@@ -91,7 +93,28 @@ const createReviews = async () => {
         rating: 10,
         comment: "I did not like the stadium",
         userId: 3,
+        stadiumId: 2,
+      },
+      {
+        date: new Date("1947-12-14"),
+        rating: 10,
+        comment: "I loved the stadium",
+        userId: 1,
+        stadiumId: 2,
+      },
+      {
+        date: new Date("1957-09-24"),
+        rating: 10,
+        comment: "I liked the stadium",
+        userId: 2,
         stadiumId: 3,
+      },
+      {
+        date: new Date("1910-02-19"),
+        rating: 10,
+        comment: "I did not like the stadium",
+        userId: 3,
+        stadiumId: 4,
       },
     ];
     await prisma.review.createMany({ data: reviews });
@@ -103,9 +126,13 @@ const createReviews = async () => {
 const createComments = async () => {
   try {
     const comments = [
-      { content: "Great Stadium", userId: 1, reviewId: 1 },
+      { content: "Average stadium and food sucked", userId: 1, reviewId: 1 },
       { content: "Great Stadium", userId: 2, reviewId: 2 },
-      { content: "Great Stadium", userId: 3, reviewId: 3 },
+      { content: "Will be coming back", userId: 3, reviewId: 3 },
+      { content: "Seat was way too hard", userId: 1, reviewId: 4 },
+      { content: "I thought I was going to a football game", userId: 2, reviewId: 5 },
+      { content: "Hotdog was unreal, 10/10 reccommended", userId: 3, reviewId: 6 },
+      { content: "Go Padres!", userId: 1, reviewId: 1 },
     ];
     await prisma.comment.createMany({ data: comments });
   } catch (error) {
@@ -117,6 +144,8 @@ const createVisitedStadiums = async () => {
   try {
     const visitedStadiums = [
       { userId: 1, stadiumId: 1 },
+      { userId: 1, stadiumId: 2 },
+      { userId: 1, stadiumId: 3 },
       { userId: 2, stadiumId: 2 },
       { userId: 3, stadiumId: 3 },
     ];
